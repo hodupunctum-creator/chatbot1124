@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>국회보 아카이브</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nunito:wght@300;600;700&display=swap">
+<style>
+/* VOICE  calm, institutional, refined: lots of white, light-weight headings, soft tints
+   IDEA   a well-made reading app for the National Assembly's monthly: latest issue cards, topic tiles, ruled contents
+   PICTURE the latest-issue card rail (deep indigo gradients) at the top of home
+   COLOUR white ground, indigo ink, three pale tints (lavender, blush, mint) with matching inks, one pink and one blue-teal accent
+   TYPE   Noto Sans KR 300 for big headings, 400/500 for text; Nunito for numbers
+   LAYOUT one phone-width column (max 520px) centred; tab bar fixed at the foot; composer above it on the search view */
+:root{color-scheme:light dark;
+  --bg:light-dark(#ffffff,#12112a);
+  --surface:light-dark(#ffffff,#1a1936);
+  --ink:light-dark(#36346a,#ecebfa);
+  --ink2:light-dark(#5c5a8a,#c6c4e8);
+  --muted:light-dark(#9a99b6,#8e8cb2);
+  --line:light-dark(#ececf4,#2a2950);
+  --lav:light-dark(#f3f2fb,#201f42);--lav-ink:light-dark(#4b4889,#cbc8f6);
+  --blush:light-dark(#fdf0f1,#331a2c);--blush-ink:light-dark(#e0506a,#ff9fb2);
+  --mint:light-dark(#edf7f5,#12302c);--mint-ink:light-dark(#2f9486,#80dccd);
+  --pink:light-dark(#d63f7e,#ff7fb2);
+  --blue:light-dark(#2f6cf0,#82abff);
+  --mark:light-dark(#fff0b8,#5a4a14);
+  --shadow:light-dark(0 10px 30px rgba(54,52,106,.10),0 10px 30px rgba(0,0,0,.4));
+  --soft:light-dark(0 2px 10px rgba(54,52,106,.06),0 2px 10px rgba(0,0,0,.3));
+  --g1:linear-gradient(115deg,#2a2774 0%,#45398c 48%,#c46b9d 100%);
+  --g2:linear-gradient(115deg,#2a2774 0%,#3c5596 52%,#6ccfaa 100%);
+  --g3:linear-gradient(120deg,#2f6cf0 0%,#3fa8e6 55%,#4fd1c5 100%);
+  --num:"Nunito","Noto Sans KR",system-ui,sans-serif;
+  --fs:16px}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+:root.big{--fs:18px}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--fs)/1.6 "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;overflow-x:clip;word-break:keep-all;overflow-wrap:break-word}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+a{color:var(--blue)}
+.app{max-width:520px;margin:0 auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.view{display:grid;gap:22px}
+
+/* top bar */
+.top{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;height:64px;position:sticky;top:0;z-index:4;background:var(--bg);margin-inline:-4px}
+.top h1{margin:0;text-align:center;font-size:17px;font-weight:500;color:var(--ink2)}
+.ib{width:44px;height:44px;border:0;background:none;border-radius:12px;display:grid;place-items:center;color:var(--ink2)}
+.ib:hover{background:var(--lav)}
+.ib svg{width:24px;height:24px}
+.ib.fs{font-family:var(--num);font-weight:700;font-size:15px}
+.ib.fs[aria-pressed=true]{color:var(--blue);background:var(--lav)}
+
+/* headings */
+.h{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.h h2{margin:0;font-weight:300;font-size:clamp(26px,7vw,32px);line-height:1.1;letter-spacing:-.02em;color:var(--ink)}
+.h .aside{font-size:13px;color:var(--muted);white-space:nowrap}
+.tag{display:inline-block;font-size:12px;font-weight:500;padding:2px 9px;border-radius:99px;background:var(--blush);color:var(--blush-ink);white-space:nowrap}
+
+/* latest-issue rail */
+.rail{display:grid;grid-auto-flow:column;grid-auto-columns:min(78%,270px);gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 20px 22px;margin-inline:-20px;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.news{scroll-snap-align:start;position:relative;overflow:hidden;border:0;border-radius:18px;min-height:132px;padding:18px 20px;text-align:left;color:#fff;display:grid;align-content:space-between;gap:12px;box-shadow:0 14px 26px rgba(42,39,116,.22)}
+.news:nth-child(odd){background:var(--g1)}
+.news:nth-child(even){background:var(--g2)}
+.news::after{content:"";position:absolute;right:-10px;top:-10px;width:55%;height:130%;pointer-events:none;opacity:.55;
+  background:radial-gradient(circle,#fff 0 1.2px,transparent 1.6px) 0 0/22px 22px,radial-gradient(circle,#fff 0 .8px,transparent 1.2px) 11px 7px/17px 17px;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 70%);mask:linear-gradient(90deg,transparent,#000 70%)}
+.news .c{font-size:12.5px;opacity:.82;position:relative;z-index:1}
+.news .t{font-size:17px;font-weight:500;line-height:1.4;position:relative;z-index:1;text-wrap:balance}
+.news .p{font-family:var(--num);font-size:12px;opacity:.75;position:relative;z-index:1}
+
+/* topic tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tile{border:0;border-radius:16px;padding:14px 14px 12px;text-align:left;display:grid;align-content:space-between;gap:16px;min-height:118px}
+.tile .l{font-size:14px;line-height:1.35}
+.tile .e{font-size:22px;line-height:1;display:block;margin-bottom:6px}
+.row .m b,.prog small b,.ihead .m b{font-weight:700;color:var(--ink)}
+.ihead .m b{color:#fff}
+.h h2 .e,.part h3 .e{margin-right:6px;font-size:.8em}
+.news .c .e{margin-right:4px}
+.tile .n{font-family:var(--num);font-weight:700;font-size:36px;line-height:1;display:flex;align-items:flex-start;gap:4px}
+.tile .n small{font-family:"Noto Sans KR",sans-serif;font-size:13px;font-weight:700;margin-top:4px}
+.t0{background:var(--lav);color:var(--lav-ink)}
+.t1{background:var(--blush);color:var(--blush-ink)}
+.t2{background:var(--mint);color:var(--mint-ink)}
+.tile:hover{filter:brightness(.98)}
+
+/* progress line */
+.prog{display:grid;gap:10px}
+.prog p{margin:0;font-weight:300;font-size:clamp(19px,5.2vw,23px);color:var(--ink)}
+.prog p b{font-family:var(--num);font-weight:700;color:var(--pink)}
+.bar{height:5px;border-radius:9px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px;background:var(--pink)}
+.prog small{font-size:13px;color:var(--muted)}
+
+/* prompt card */
+.ask{border:0;border-radius:20px;background:var(--lav);padding:22px;display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;text-align:left;color:var(--ink)}
+.ask svg{width:30px;height:30px;color:var(--lav-ink)}
+.ask .t{font-size:20px;font-weight:400}
+.ask .d{grid-column:2;font-size:14.5px;color:var(--muted);line-height:1.5}
+.ask .go{grid-row:1;grid-column:3;color:var(--ink2);font-size:22px}
+
+/* pills */
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:0;border-radius:8px;padding:6px 11px;font-size:13.5px;background:var(--mint);color:var(--mint-ink)}
+.pill.b{background:var(--blush);color:var(--blush-ink)}
+.pill.l{background:var(--lav);color:var(--lav-ink)}
+.pill[aria-pressed=true]{outline:1.5px solid currentColor}
+.sub{font-size:14px;color:var(--ink2);margin:0 0 -8px}
+
+/* issue list */
+.list{display:grid;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%}
+.cov{width:52px;height:64px;border-radius:10px;color:#fff;display:grid;place-items:center;font-family:var(--num);line-height:1;text-align:center;background:var(--g1)}
+.cov b{font-size:20px;font-weight:600;display:block}
+.cov small{font-size:10px;opacity:.85}
+.row:nth-child(even) .cov{background:var(--g2)}
+.row .t{font-weight:500;display:block}
+.row .no{font-family:var(--num);font-size:13px;color:var(--muted);font-weight:400}
+.row .m{font-size:13px;color:var(--muted);display:block}
+.row .go{color:var(--muted);font-size:20px}
+
+.loading{margin:0 0 12px;font-size:14px;color:var(--muted)}
+.note{border-radius:16px;background:var(--lav);padding:16px 18px;font-size:13.5px;color:var(--ink2);display:grid;gap:6px}
+.note b{color:var(--ink);font-weight:500}
+.note p{margin:0}
+
+/* search */
+.hero{border-radius:22px;background:var(--g3);color:#fff;padding:22px;display:grid;gap:8px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:40px;background:rgba(255,255,255,.16);transform:rotate(24deg)}
+.hero h3{margin:0;font-weight:400;font-size:22px;position:relative;z-index:1}
+.hero p{margin:0;font-size:14.5px;opacity:.9;position:relative;z-index:1}
+.hero .pills{position:relative;z-index:1;margin-top:6px}
+.hero .pill{background:rgba(255,255,255,.22);color:#fff}
+#log{display:grid;gap:16px}
+.q{justify-self:end;max-width:85%;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:18px 18px 4px 18px;font-weight:500}
+.a{background:var(--surface);border:1px solid var(--line);border-radius:18px 18px 18px 4px;padding:18px;box-shadow:var(--soft)}
+.status{font-size:13.5px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.status button{border:1px solid var(--line);background:none;border-radius:99px;padding:2px 12px;font-size:12.5px;color:var(--ink2)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--pink);animation:pl 1.2s infinite}
+@keyframes pl{50%{opacity:.25}}
+.answer p{margin:6px 0 10px}
+.answer ul{margin:0 0 6px;padding-left:18px}
+.answer li{margin-bottom:10px}
+.answer .ref,.src .num{font-family:var(--num);font-weight:700;font-size:11px;border-radius:6px;padding:1px 6px;background:var(--lav);color:var(--lav-ink)}
+.nf{border-radius:14px;background:var(--blush);color:var(--blush-ink);padding:14px 16px;font-weight:500}
+.nf small{display:block;color:var(--ink2);font-weight:400;margin-top:4px;font-size:13.5px}
+.srcs{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.srcs h4{grid-column:1/-1;margin:2px 0 0;font-size:13px;font-weight:500;color:var(--muted)}
+.src{position:relative;border-radius:14px;padding:14px 30px 14px 14px;display:grid;gap:4px;align-content:start}
+.src::after{content:"";position:absolute;right:12px;top:0;width:12px;height:18px;background:currentColor;clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
+.src:nth-of-type(3n+1){background:var(--lav);color:var(--lav-ink)}
+.src:nth-of-type(3n+2){background:var(--mint);color:var(--mint-ink)}
+.src:nth-of-type(3n){background:var(--blush);color:var(--blush-ink)}
+.src .tt{font-weight:500;font-size:14.5px;line-height:1.4;color:var(--ink)}
+.src .loc{font-size:12.5px}
+.src .snip{font-size:13px;color:var(--ink2);line-height:1.5}
+.src .num{justify-self:start;background:var(--surface)}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
+details.more{margin-top:10px;font-size:13.5px;color:var(--muted)}
+.composer{position:fixed;left:0;right:0;bottom:calc(68px + env(safe-area-inset-bottom,0px));z-index:5;padding:10px max(20px,env(safe-area-inset-right,0px)) 10px max(20px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,var(--bg) 40%)}
+.composer form{max-width:480px;margin:0 auto;display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 6px 6px 20px;box-shadow:var(--shadow)}
+.composer input{flex:1;border:0;outline:0;background:none;font-size:16px;padding:8px 0}
+.composer input::placeholder{color:var(--muted)}
+.send{width:44px;height:44px;border-radius:50%;border:0;background:var(--g3);color:#fff;display:grid;place-items:center;flex:none}
+.send[disabled]{opacity:.45}
+
+/* contents */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--lav);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:none;border-radius:9px;padding:9px;font-size:15px;color:var(--ink2)}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);font-weight:500;box-shadow:var(--soft)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-20px;padding-inline:20px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;font-size:14px;color:var(--ink2);white-space:nowrap}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.chip b{font-family:var(--num);font-weight:700;margin-left:2px}
+.chip.yr{font-family:var(--num);font-weight:600}
+.csel{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink2)}
+.csel select{flex:1;max-width:320px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 10px;font-size:15px}
+.ihead{border-radius:20px;background:var(--g1);color:#fff;padding:22px;display:grid;gap:4px;box-shadow:0 14px 26px rgba(42,39,116,.2)}
+.ihead .l{font-size:24px;font-weight:300}
+.ihead .th{font-size:15px;opacity:.92}
+.ihead .m{font-size:13px;opacity:.75;font-family:var(--num)}
+.part h3{margin:0 0 4px;font-size:15px;font-weight:500;color:var(--muted)}
+.trow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:12px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.trow .pg{width:44px;height:44px;border-radius:12px;background:var(--lav);color:var(--lav-ink);display:grid;place-items:center;font-family:var(--num);font-weight:600;font-size:14px}
+.trow .c{font-size:12.5px;color:var(--muted);display:block}
+.trow .t{font-weight:500;display:block;line-height:1.45}
+.trow .au{font-size:12.5px;color:var(--muted);display:block}
+.trow .ai{font-size:12.5px;color:var(--blue);white-space:nowrap}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px max(12px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.tabbar nav{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
+.tab{border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 4px;font-size:11.5px;color:var(--muted);min-height:52px}
+.tab svg{width:24px;height:24px}
+.tab[aria-selected=true]{color:var(--ink);font-weight:500}
+.tab[aria-selected=true]::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--pink)}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}.rail{scroll-behavior:auto}}
+@media (min-width:700px){.tile{min-height:130px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <button class="ib" type="button" data-go="toc" aria-label="목차 열기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <h1 id="ttl">국회보 아카이브</h1>
+    <button class="ib fs" type="button" id="fs" aria-pressed="false" aria-label="글자 크게 보기">가</button>
+  </div>
+
+  <!-- HOME -->
+  <p id="loading" class="loading">기사 데이터를 불러오는 중…</p>
+  <section class="view" id="v-home" aria-label="홈">
+    <div class="h"><h2><span class="e" aria-hidden="true">📰</span>최신호</h2><span class="aside" id="latestLabel"></span></div>
+    <div class="rail" id="rail" aria-label="최신호 기사"></div>
+
+    <div class="h"><h2><span class="e" aria-hidden="true">🧭</span>주제로 찾기:</h2></div>
+    <div class="tiles" id="tiles"></div>
+
+    <div class="prog">
+      <p id="progText"></p>
+      <div class="bar" aria-hidden="true"><i id="progBar"></i></div>
+      <small id="progNote"></small>
+    </div>
+
+    <button class="ask" type="button" data-go="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4" stroke-linecap="round"/></svg>
+      <span class="t">무엇이 궁금하세요? 💬</span>
+      <span class="d">법률 이름, 정책, 의원, 지역, 해외 의회를 물으면 실린 호와 쪽수를 찾아 요약해 드려요.</span>
+      <span class="go" aria-hidden="true">›</span>
+    </button>
+
+    <p class="sub">🔥 자주 찾는 질문</p>
+    <div class="pills" id="faq"></div>
+
+    <div class="h"><h2><span class="e" aria-hidden="true">📚</span>수록 호</h2><button class="chip" type="button" data-go="toc">목차 보기</button></div>
+    <div class="list" id="issues"></div>
+
+    <div class="note">
+      <b>✅ 답변은 이렇게 만들어져요</b>
+      <p>국회보 원문에서 먼저 찾고, 찾은 기사만 근거로 AI가 요약합니다. 원문에 없는 내용은 “국회보에서 찾을 수 없습니다”라고 답해요. 쪽수는 인쇄본 기준입니다.</p>
+      <p id="sampleNote">📚 국회사무처가 발행하는 월간 《국회보》 2024년 2월호(제687호)부터 2026년 11월호(제720호)까지 12개 호를 담았어요. 제안용 시연본이며 국회사무처의 공식 서비스가 아닙니다.</p>
+    </div>
+  </section>
+
+  <!-- SEARCH -->
+  <section class="view" id="v-search" hidden aria-label="AI 검색">
+    <div class="hero" id="empty">
+      <h3>🔎 국회보에 물어보세요</h3>
+      <p>질문에 맞는 기사를 원문에서 찾고, 찾은 내용만 요약해요. 답변마다 출처 호와 쪽수가 붙습니다.</p>
+      <div class="pills" id="quick"></div>
+    </div>
+    <div id="log" aria-live="polite"></div>
+  </section>
+
+  <!-- CONTENTS -->
+  <section class="view" id="v-toc" hidden aria-label="목차">
+    <div class="seg" role="group" aria-label="목차 보기 방식">
+      <button type="button" data-mode="issue" aria-pressed="true">호별로 보기</button>
+      <button type="button" data-mode="corner" aria-pressed="false">코너별로 보기</button>
+    </div>
+    <div id="m-issue" class="view">
+      <div class="chips" id="tyears" role="group" aria-label="연도 선택"></div>
+      <div class="chips" id="vols" role="group" aria-label="호 선택"></div>
+      <div id="ihead"></div>
+      <div id="toc" class="view"></div>
+    </div>
+    <div id="m-corner" class="view" hidden>
+      <div class="chips wrap" id="corners" role="group" aria-label="코너 선택"></div>
+      <label class="csel" for="callsel">모든 코너 <select id="callsel"></select></label>
+      <div id="ctoc"></div>
+    </div>
+  </section>
+</div>
+
+<div class="composer" id="composer" hidden>
+  <form id="askf">
+    <label for="qbox" hidden>질문</label>
+    <input id="qbox" placeholder="예: 고환율 대응 방안 기사 알려줘" autocomplete="off" enterkeyhint="search">
+    <button class="send" id="send" type="submit" aria-label="검색"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  </form>
+</div>
+
+<div class="tabbar">
+  <nav role="tablist" aria-label="화면 이동">
+    <button class="tab" role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></svg>홈</button>
+    <button class="tab" role="tab" data-tab="search" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 5h14v10H10l-4 4v-4H5z"/></svg>AI 검색</button>
+    <button class="tab" role="tab" data-tab="toc" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 8h6M9 12h6M9 16h3" stroke-linecap="round"/></svg>목차</button>
+  </nav>
+</div>
+
+<script>
+{
+fetch("data.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(start).catch(() => { document.getElementById("loading").textContent = "기사 데이터를 불러오지 못했어요. 새로고침해 보세요."; });
+function start(DATA){
+document.getElementById("loading").hidden = true;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const NOT_FOUND_MSG = "해당 내용은 국회보에서 찾을 수 없습니다.";
+const ISSUE = Object.fromEntries(DATA.issues.map(i => [i.no, i]));
+
+const FAQ = [
+  {k:"m", label:"🌱 탄소중립", q:"탄소중립 기후위기 대응"},
+  {k:"m", label:"👶 저출생 대응", q:"저출생 위기 대응 정책"},
+  {k:"b", label:"💰 예산안 심사", q:"예산안 심사 쟁점"},
+  {k:"b", label:"🤖 AI 기본법", q:"AI 기본법 인공지능 입법"},
+  {k:"l", label:"🔐 개인정보 유출", q:"개인정보 유출 해킹 대책"},
+  {k:"l", label:"💱 고환율 대응", q:"고환율 환율 대응"},
+  {k:"m", label:"📜 제헌절과 헌법", q:"제헌절 헌법"},
+  {k:"b", label:"🏪 소상공인 지원", q:"소상공인 자영업자 지원"}
+];
+const TOPICS = [
+  {sec:"입법과 정책", e:"⚖️", label:"새 법률·\n입법 해설"},
+  {sec:"의원과 지역", e:"📍", label:"의원과\n지역 이야기"},
+  {sec:"세계의 의회", e:"🌐", label:"주재관\n리포트"}
+];
+const SEMO = {"국회 소식":"🏛️","특집":"📌","의원과 지역":"📍","입법과 정책":"⚖️","세계의 의회":"🌐","읽을거리":"☕"};
+
+/* ---------- search ---------- */
+const SYN = {
+  "저출생":["저출생","저출산","인구"], "저출산":["저출산","저출생"], "인구":["인구","저출생","고령화"],
+  "탄소중립":["탄소중립","기후","온실가스"], "기후":["기후","탄소중립"],
+  "예산":["예산","예산안","결산"], "예산안":["예산안","예산"],
+  "국정감사":["국정감사","국감"], "국감":["국감","국정감사"],
+  "ai":["ai","인공지능"], "인공지능":["인공지능","ai"],
+  "전세사기":["전세사기","전세"], "의회외교":["의회외교","회담","대표단"],
+  "해외":["해외","주재관"], "환율":["환율","고환율"], "고환율":["고환율","환율"],
+  "개인정보":["개인정보","해킹"], "소상공인":["소상공인","자영업자"], "자영업자":["자영업자","소상공인"],
+  "헌법":["헌법","제헌","개헌"], "제헌절":["제헌절","제헌"], "계엄":["계엄","비상계엄"]
+};
+const STOP = new Set("알려줘 알려주세요 알려 주세요 찾아줘 찾아 주세요 정리해줘 요약해줘 요약 관련 관련된 대한 대해 대해서 기사 칼럼 내용 무엇 뭐야 뭐가 있어 있나요 있어요 어떤 어디 몇호 몇 호 페이지 소개 소개한 다룬 나온 실린 좀 주세요 해줘 정보 무엇인가요 뭔가요 궁금해 궁금합니다 있었나요 했나요 국회보 사보 월간 코너 코너에서 이야기 실렸어 실렸나 실렸어요 실렸나요 나왔어 나왔나요 뭐 목차 이번 이번호 무슨".split(" "));
+const PARTICLE2 = /(에서는|으로는|에서|에게|으로|이란|과의|와의|에는|에도|들을|들의|들은|들이)$/;
+const PARTICLE1 = /(은|는|을|를|의|와|과|에|이|가|도)$/;
+const ENDING = /(한가요|인가요|했나요|하나요|되나요|있나요|이에요|예요|해요|하는|하다|되는|된|한)$/;
+const stripP = w => { w = w.replace(PARTICLE2, ""); if (w.length >= 3) w = w.replace(ENDING, ""); return w.length >= 3 ? w.replace(PARTICLE1, "") : w; };
+const norm = s => s.toLowerCase().replace(/[^0-9a-z가-힣]/g, "");
+const isAscii = s => /^[0-9a-z]+$/i.test(s);
+
+const PAGES = [];
+DATA.articles.forEach((a, ai) => a.pages.forEach(p => PAGES.push({ai, no:a.no, p:p.p, t:p.t, n:norm(p.t), low:p.t.toLowerCase()})));
+const ART_HEAD = DATA.articles.map(a => norm(a.section + a.corner + a.title + (a.author || "")));
+const YEAR = i => i.label.slice(0, 4);
+const MONTHS = i => (i.label.replace(/^\d+년\s*/, "").match(/\d+/g) || []).map(Number);
+
+function issueOf(q){
+  let m = q.match(/(?:제|통권|vol\.?)\s*(\d{3})\s*호?/i) || q.match(/(?<![\d월])(\d{3})\s*호/);
+  if (m && ISSUE[+m[1]]) return +m[1];
+  const y = (q.match(/(20\d\d)\s*년/) || [])[1];
+  m = q.match(/(?<!\d)(\d{1,2})\s*월\s*호?/);
+  if (m){ const mo = +m[1]; const hits = DATA.issues.filter(i => (!y || YEAR(i) === y) && MONTHS(i).includes(mo)); if (hits.length) return hits[hits.length - 1].no; }
+  return null;
+}
+function yearOf(q){ const y = (q.match(/(20\d\d)\s*년/) || [])[1]; return y && DATA.issues.some(i => YEAR(i) === y) ? y : null; }
+
+function terms(q){
+  q = q.replace(/(?:제|통권|vol\.?)\s*\d{3}\s*호?/gi, " ").replace(/(?<![\d월])\d{3}\s*호/g, " ").replace(/(?<!\d)\d{1,2}\s*월\s*호?/g, " ").replace(/20\d\d\s*년(도)?/g, " ");
+  const raw = q.split(/[\s,·・/|?!.'"“”‘’《》〈〉「」<>()]+/).map(w => w.trim()).filter(Boolean);
+  const out = [];
+  const joined = norm(q);
+  for (const k of Object.keys(SYN)) if (k.length >= 3 && joined.includes(k) && !out.some(o => o.key === k)) out.push({key:k, vars:SYN[k]});
+  for (let w of raw){
+    w = stripP(w);
+    if (w.length < 2 && !isAscii(w)) continue;
+    if (STOP.has(w)) continue;
+    const k = norm(w); if (!k || STOP.has(k)) continue;
+    if (out.some(o => o.key === k || o.vars.some(v => norm(v) === k))) continue;
+    out.push({key:k, vars: SYN[k] || [w]});
+  }
+  return out;
+}
+function countIn(page, v){
+  const nv = norm(v); if (!nv) return 0;
+  if (isAscii(nv)) return (page.low.match(new RegExp("(^|[^a-z0-9])" + nv + "($|[^a-z0-9])", "g")) || []).length;
+  let c = 0, i = 0; while ((i = page.n.indexOf(nv, i)) !== -1){ c++; i += nv.length; } return c;
+}
+function search(q){
+  const only = issueOf(q);
+  const yr = only ? null : yearOf(q);
+  const inScope = no => only ? no === only : yr ? YEAR(ISSUE[no]) === yr : true;
+  const ts = terms(q);
+  const pool = PAGES.filter(p => inScope(p.no));
+  const nq = norm(q);
+  const overview = () => DATA.articles.map((a, ai) => ({a, ai})).filter(x => x.a.no === only && x.a.pages.length)
+    .map(x => ({ai:x.ai, art:x.a, pages:[{p:x.a.pages[0].p, s:1, t:x.a.pages[0].t}], hit:new Set(), score:1}));
+  const series = [...new Set(DATA.articles.map(a => a.corner))].filter(c => norm(c).length >= 4 && nq.includes(norm(c)));
+  if (series.length && !only){
+    const results = DATA.articles.map((a, ai) => ({a, ai})).filter(x => series.includes(x.a.corner) && x.a.pages.length && inScope(x.a.no))
+      .sort((x, y) => y.a.no - x.a.no).map(x => ({ai:x.ai, art:x.a, pages:x.a.pages.slice(0, 2).map(p => ({p:p.p, s:1, t:p.t})), hit:new Set(), score:1}));
+    return {ts, results, only, series:true};
+  }
+  if (!ts.length) return only ? {ts, results:overview(), only, overview:true} : {ts, results:[], only};
+  const N = pool.length;
+  const df = ts.map(t => pool.filter(p => t.vars.some(v => countIn(p, v) > 0)).length);
+  const idf = df.map(d => Math.log(1 + N / (d + 0.5)));
+  const byArt = new Map();
+  pool.forEach(p => {
+    let s = 0; const hit = new Set();
+    ts.forEach((t, ti) => { let c = 0; t.vars.forEach(v => c += countIn(p, v)); if (c){ s += idf[ti] * (1 + Math.log(c)); hit.add(ti); } });
+    if (!s) return;
+    const e = byArt.get(p.ai) || {ai:p.ai, pages:[], hit:new Set()};
+    e.pages.push({p:p.p, s, t:p.t}); hit.forEach(h => e.hit.add(h)); byArt.set(p.ai, e);
+  });
+  DATA.articles.forEach((a, ai) => {
+    if (!inScope(a.no) || byArt.has(ai) || !a.pages.length) return;
+    if (ts.some(t => t.vars.some(v => ART_HEAD[ai].includes(norm(v))))) byArt.set(ai, {ai, pages:[{p:a.pages[0].p, s:0.01, t:a.pages[0].t}], hit:new Set()});
+  });
+  const results = [...byArt.values()].map(e => {
+    e.pages.sort((x, y) => y.s - x.s);
+    let s = e.pages[0].s + 0.5 * (e.pages[1]?.s || 0) + 0.25 * (e.pages[2]?.s || 0);
+    ts.forEach((t, ti) => { if (t.vars.some(v => ART_HEAD[e.ai].includes(norm(v)))) { s += 3 * idf[ti]; e.hit.add(ti); } });
+    s *= (0.4 + 0.6 * e.hit.size / ts.length);
+    return {...e, score:s, art:DATA.articles[e.ai]};
+  }).sort((x, y) => y.score - x.score);
+  if (!results.length && only) return {ts, results:overview(), only, overview:true};
+  return {ts, results, only};
+}
+function snippet(text, ts, len = 130){
+  const low = text.toLowerCase();
+  let at = -1;
+  for (const t of ts) for (const v of t.vars){ const i = low.indexOf(v.toLowerCase()); if (i >= 0 && (at < 0 || i < at)) at = i; }
+  const s = at < 0 ? 0 : Math.max(0, at - 40), e = Math.min(text.length, s + len);
+  let out = esc(text.slice(s, e).replace(/\n/g, " "));
+  for (const t of ts) for (const v of t.vars){
+    if (v.length < 2) continue;
+    out = out.replace(new RegExp(esc(v).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => "<mark>" + m + "</mark>");
+  }
+  return (s > 0 ? "…" : "") + out + (e < text.length ? "…" : "");
+}
+const pageList = ps => [...new Set(ps)].sort((x, y) => x - y).map(p => "p." + p).join(", ");
+const locText = (art, pages) => `제${art.no}호 · ${art.label} · ${art.corner} · ${pages && pages.length ? pageList(pages) : "p." + art.start + "–" + art.end}`;
+
+/* ---------- Claude ---------- */
+const samplePromise = (window.claude && window.claude.use) ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
+let sampleOff = false, ctl = null, busy = false;
+
+function buildPrompt(q, refs, whole, wide){
+  const blocks = refs.map((r, i) => {
+    const a = r.art, per = whole ? 3200 : wide ? 900 : 1800;
+    const pg = (whole ? r.pages.slice(0, 6) : r.pages.slice(0, 3)).slice().sort((x, y) => x.p - y.p)
+      .map(p => `  (p.${p.p}) ${p.t.replace(/\n/g, " ").slice(0, per)}`).join("\n");
+    return `[${i + 1}] 제${a.no}호(${a.label}) 〈${a.corner}〉 「${a.title || a.corner}」${a.author ? " " + a.author : ""} / 기사 범위 p.${a.start}–${a.end}\n${pg}`;
+  }).join("\n\n");
+  return `당신은 국회사무처가 발행하는 월간 《국회보》 과월호 아카이브의 안내 챗봇입니다.
+아래 [자료]는 사용자 질문으로 과월호 원문을 검색해 찾은 기사 발췌입니다. (p.숫자)는 인쇄본 쪽수입니다.
+
+규칙
+1. [자료]에 적힌 내용만 근거로 답합니다. 외부 지식이나 추측은 쓰지 않습니다.
+2. 질문과 실제로 관련된 내용이 [자료]에 하나도 없으면, 다른 말 없이 NOT_FOUND 한 단어만 출력합니다. 단어가 스치듯 언급만 된 경우도 관련 없음으로 봅니다.
+3. 관련 있는 기사만 고릅니다. 보통 최대 5개지만, 질문이 특정 호의 목차나 한 코너의 연재 전체를 묻는다면 해당 기사를 모두 다룹니다(이때 기사당 요약은 1~2문장).
+4. 형식(한국어, 마크다운은 굵게와 '-' 목록만):
+   첫 줄: 질문에 대한 종합 답변 1~2문장.
+   그다음 관련 기사마다 한 항목:
+   - **[번호] 기사 제목** (제N호 p.쪽수) — 해당 내용 요약 2~3문장.
+5. 정치적으로 민감한 주제는 기사에 적힌 사실만 중립적으로 전하고, 평가나 의견을 덧붙이지 않습니다.
+6. 원문 문장을 길게 그대로 옮기지 말고 요약합니다.
+
+[질문]
+${q}
+
+[자료]
+${blocks}`;
+}
+function md(text){
+  let html = "", inList = false;
+  for (const ln of text.trim().split(/\n+/)){
+    let h = esc(ln.trim()).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\[(\d{1,2})\]/g, '<span class="ref">$1</span>');
+    if (/^[-•]\s+/.test(ln.trim())){ if (!inList){ html += "<ul>"; inList = true; } html += "<li>" + h.replace(/^[-•]\s+/, "") + "</li>"; }
+    else { if (inList){ html += "</ul>"; inList = false; } html += "<p>" + h + "</p>"; }
+  }
+  return html + (inList ? "</ul>" : "");
+}
+
+async function ask(q, opts = {}){
+  q = q.trim(); if (!q || busy) return;
+  busy = true; $("#send").disabled = true;
+  const log = $("#log");
+  const qe = document.createElement("div"); qe.className = "q"; qe.textContent = q; log.append(qe);
+  const box = document.createElement("div"); box.className = "a"; log.append(box);
+  qe.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+  const found = opts.forced ? {ts:terms(opts.forced.art.title), results:[opts.forced]} : search(q);
+  const {ts, results} = found;
+  const top = results.slice(0, found.overview ? 13 : found.series ? 8 : 6);
+  const done = () => { busy = false; ctl = null; $("#send").disabled = false; };
+  if (!top.length){
+    box.innerHTML = `<div class="nf">📭 ${NOT_FOUND_MSG}<small>수록된 ${DATA.issues.length}개 호에서 관련 단어를 찾지 못했습니다. 다른 표현으로 물어보세요.</small></div>`;
+    done(); return;
+  }
+  const srcHTML = cited => `<div class="srcs"><h4>${cited ? "📌 출처" : "🔎 찾은 기사"}</h4>` + top.map((r, i) => {
+    if (cited && !cited.has(i + 1)) return "";
+    return `<div class="src"><span class="num">${i + 1}</span><div class="tt">${esc(r.art.title || r.art.corner)}</div><div class="loc">${esc(locText(r.art, r.pages.slice(0, 3).map(p => p.p)))}</div><div class="snip">${snippet(r.pages[0].t, ts)}</div></div>`;
+  }).join("") + `</div>`;
+  box.innerHTML = `<div class="status"><span class="dot"></span><span class="msg">원문 ${top.length}건을 찾았습니다. 요약하는 중…</span><button type="button" class="stop">멈추기</button></div><div class="answer"></div>` + srcHTML(null);
+  const ans = box.querySelector(".answer"), st = box.querySelector(".status");
+  box.querySelector(".stop").onclick = () => ctl && ctl.abort();
+  const sample = sampleOff ? null : await samplePromise;
+  if (!sample){ st.innerHTML = "<span>이 화면에서는 AI 요약을 쓸 수 없어 검색 결과만 보여 드려요.</span>"; done(); return; }
+  ctl = new AbortController();
+  try {
+    const {text} = await sample(buildPrompt(q, top, !!opts.forced, found.overview || found.series), {
+      modelTier:"default", signal:ctl.signal, cache:false,
+      onText: ({text}) => { if (/^\s*NOT_FOUND/.test(text)) return; ans.innerHTML = md(text); }
+    });
+    if (/NOT_FOUND/.test(text) || !/\[\d{1,2}\]/.test(text)){
+      box.innerHTML = `<div class="nf">📭 ${NOT_FOUND_MSG}<small>단어가 나온 쪽은 있지만 질문에 답할 만한 내용은 없었습니다.</small></div><details class="more"><summary>단어가 나온 쪽 보기</summary>${srcHTML(null)}</details>`;
+      done(); return;
+    }
+    const cited = new Set([...text.matchAll(/\[(\d{1,2})\]/g)].map(m => +m[1]));
+    st.remove(); ans.innerHTML = md(text);
+    box.querySelector(".srcs").outerHTML = srcHTML(cited);
+  } catch (e){
+    const code = e && e.code;
+    if (e && e.text) ans.innerHTML = md(e.text);
+    const msg = code === "cancelled" ? "요약을 멈췄어요. 아래는 검색 결과예요."
+      : ["not_granted","sampling_disabled","capability_disabled","not_declared","capability_removed"].includes(code) ? (sampleOff = true, "AI 요약이 허용되지 않아 검색 결과만 보여 드려요.")
+      : code === "rate_limited" ? "요청이 많아 잠시 쉬고 있어요. 조금 뒤 다시 물어보세요."
+      : code === "refused" ? (ans.innerHTML = "", "이 질문은 요약할 수 없었어요. 다른 표현으로 물어보세요.")
+      : "요약이 중간에 끊겼어요. 같은 질문을 다시 보내 보세요.";
+    st.innerHTML = `<span>${msg}</span>`;
+  }
+  done();
+}
+
+/* ---------- views ---------- */
+const TITLES = {home:"국회보 아카이브", search:"AI 검색", toc:"목차"};
+const views = {home:$("#v-home"), search:$("#v-search"), toc:$("#v-toc")};
+function go(tab){
+  for (const k in views) views[k].hidden = k !== tab;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.tab === tab));
+  $("#composer").hidden = tab !== "search";
+  $("#ttl").textContent = TITLES[tab];
+  window.scrollTo({top: tab === "search" && $("#log").children.length ? document.body.scrollHeight : 0});
+  if (tab === "search") setTimeout(() => $("#qbox").focus({preventScroll:true}), 50);
+}
+function askIn(q, opts){ go("search"); $("#empty").hidden = true; ask(q, opts); }
+function summarize(a){
+  const forced = {art:a, ai:DATA.articles.indexOf(a), pages:a.pages.map(p => ({p:p.p, s:1, t:p.t})), score:1};
+  askIn(`${a.label} 〈${a.corner}〉 「${a.title}」 기사를 요약해줘`, {forced});
+}
+function setBig(on){
+  document.documentElement.classList.toggle("big", on);
+  $("#fs").setAttribute("aria-pressed", on);
+  try { localStorage.setItem("nab-big", on ? "1" : ""); } catch (e) {}
+}
+try { if (localStorage.getItem("nab-big")) setBig(true); } catch (e) {}
+
+const desc = DATA.issues.slice().sort((x, y) => y.date.localeCompare(x.date));
+const YEARS = [...new Set(desc.map(YEAR))];
+const latest = desc[0];
+const artsOf = no => DATA.articles.filter(a => a.no === no);
+
+/* home */
+$("#latestLabel").textContent = `제${latest.no}호 · ${latest.label}`;
+$("#rail").innerHTML = artsOf(latest.no).filter(a => ["특집","국회 소식","입법과 정책","의원과 지역","세계의 의회"].includes(a.section) && !/뉴스|일지|핫 콘텐츠|찰칵/.test(a.corner)).sort((x, y) => (x.section === "특집" ? -1 : 0) - (y.section === "특집" ? -1 : 0) || x.start - y.start).slice(0, 8).map(a => `<button class="news" type="button" data-art="${esc(a.id)}"><span class="c"><span class="e" aria-hidden="true">${SEMO[a.section] || "📄"}</span>${esc(a.corner)}</span><span class="t">${esc(a.title)}</span><span class="p">p.${a.start}</span></button>`).join("");
+$("#tiles").innerHTML = TOPICS.map((t, i) => {
+  const n = DATA.articles.filter(a => a.section === t.sec).length;
+  return `<button class="tile t${i}" type="button" data-sec="${esc(t.sec)}"><span class="l"><span class="e" aria-hidden="true">${t.e}</span>${esc(t.label).replace("\n", "<br>")}</span><span class="n">${n}<small>편</small></span></button>`;
+}).join("");
+const yr = YEAR(latest), inYear = DATA.issues.filter(i => YEAR(i) === yr).length, expected = Math.max(...DATA.issues.filter(i => YEAR(i) === yr).flatMap(MONTHS));
+const pct = Math.round(inYear / Math.max(1, expected) * 100);
+$("#progText").innerHTML = `${esc(yr)}년 발행분 수록률은 <b>${pct}%</b>`;
+$("#progBar").style.width = pct + "%";
+$("#progNote").innerHTML = `${esc(yr)}년 ${expected}월호까지 중 <b>${inYear}개 호</b> · 전체 <b>${DATA.issues.length}개 호</b>, 기사 <b>${DATA.articles.length}편</b>`;
+$("#faq").innerHTML = FAQ.map(f => `<button class="pill ${f.k}" type="button" data-ask="${esc(f.q)}">${esc(f.label)}</button>`).join("");
+$("#quick").innerHTML = FAQ.slice(0, 4).map(f => `<button class="pill" type="button" data-ask="${esc(f.q)}">${esc(f.label)}</button>`).join("");
+$("#issues").innerHTML = desc.map(i => {
+  const [y, m] = [YEAR(i), MONTHS(i).join("·")];
+  return `<button class="row" type="button" data-vol="${i.no}"><span class="cov" aria-hidden="true"><span><b>${esc(m)}</b><small>${esc(y)}</small></span></span><span><span class="t">${esc(i.label)} <span class="no">제${i.no}호</span></span><span class="m">${i.theme ? "📌 " + esc(i.theme) + " · " : ""}<b>기사 ${artsOf(i.no).length}편</b></span></span><span class="go" aria-hidden="true">›</span></button>`;
+}).join("");
+
+/* contents */
+let vol = latest.no;
+const trow = (a, lead) => `<button class="trow" type="button" data-art="${esc(a.id)}"><span class="pg">${esc(lead)}</span><span><span class="c">${esc(a.corner)}</span><span class="t">${esc(a.title)}</span>${a.author ? `<span class="au">${esc(a.author)}</span>` : ""}</span><span class="ai">요약 ›</span></button>`;
+function renderToc(){
+  const i = ISSUE[vol];
+  $("#tyears").innerHTML = YEARS.map(y => `<button class="chip yr" type="button" data-ty="${y}" aria-pressed="${y === YEAR(i)}">${y}년</button>`).join("");
+  $("#vols").innerHTML = desc.filter(x => YEAR(x) === YEAR(i)).map(x => `<button class="chip" type="button" data-pick="${x.no}" aria-pressed="${x.no === vol}">${esc(x.label.replace(/^\d+년 /, ""))} · ${x.no}호</button>`).join("");
+  $("#ihead").innerHTML = `<div class="ihead"><span class="l">${esc(i.label)}</span>${i.theme ? `<span class="th">📌 특집 · ${esc(i.theme)}</span>` : ""}<span class="m">제${i.no}호 · 발행 ${esc(i.date.replace(/-/g, "."))} · <b>기사 ${artsOf(i.no).length}편</b> · ${i.pages}쪽</span></div>`;
+  const list = artsOf(i.no).slice().sort((x, y) => x.start - y.start), groups = [];
+  list.forEach(a => { const g = groups[groups.length - 1]; if (g && g.s === a.section) g.items.push(a); else groups.push({s:a.section, items:[a]}); });
+  $("#toc").innerHTML = groups.map(g => `<div class="part"><h3><span class="e" aria-hidden="true">${SEMO[g.s] || "📄"}</span>${esc(g.s)}</h3>${g.items.map(a => trow(a, String(a.start).padStart(2, "0"))).join("")}</div>`).join("");
+}
+const CCOUNT = {}; DATA.articles.forEach(a => CCOUNT[a.corner] = (CCOUNT[a.corner] || 0) + 1);
+const CORNERS = Object.keys(CCOUNT).sort((x, y) => CCOUNT[y] - CCOUNT[x]);
+let corner = "주재관 리포트" in CCOUNT ? "주재관 리포트" : CORNERS[0];
+function renderCorner(){
+  $("#corners").innerHTML = CORNERS.slice(0, 14).concat(CORNERS.slice(0, 14).includes(corner) ? [] : [corner]).map(c => `<button class="chip" type="button" data-corner="${esc(c)}" aria-pressed="${c === corner}">${esc(c)} <b>${CCOUNT[c]}</b></button>`).join("");
+  $("#callsel").innerHTML = CORNERS.slice().sort((x, y) => x.localeCompare(y, "ko")).map(c => `<option value="${esc(c)}"${c === corner ? " selected" : ""}>${esc(c)} (${CCOUNT[c]})</option>`).join("");
+  $("#ctoc").innerHTML = DATA.articles.filter(a => a.corner === corner).sort((x, y) => y.no - x.no || x.start - y.start).map(a => trow(a, String(a.no))).join("");
+}
+function setMode(m){
+  document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
+  $("#m-issue").hidden = m !== "issue"; $("#m-corner").hidden = m !== "corner";
+}
+renderToc(); renderCorner();
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-ty],[data-tab],[data-go],[data-ask],[data-art],[data-sec],[data-vol],[data-pick],[data-mode],[data-corner],#fs");
+  if (!el) return;
+  const d = el.dataset;
+  if (el.id === "fs") setBig(!document.documentElement.classList.contains("big"));
+  else if (d.tab) go(d.tab);
+  else if (d.go) go(d.go);
+  else if (d.ask) askIn(d.ask);
+  else if (d.art) summarize(DATA.articles.find(a => a.id === d.art));
+  else if (d.sec){ corner = {"입법과 정책":"법률, 시대를 읽다","의원과 지역":"길에서 길을 찾다","세계의 의회":"주재관 리포트"}[d.sec] || corner; renderCorner(); setMode("corner"); go("toc"); }
+  else if (d.vol){ vol = +d.vol; setMode("issue"); renderToc(); go("toc"); }
+  else if (d.pick){ vol = +d.pick; renderToc(); }
+  else if (d.ty){ vol = desc.find(x => YEAR(x) === d.ty).no; renderToc(); }
+  else if (d.mode) setMode(d.mode);
+  else if (d.corner){ corner = d.corner; renderCorner(); }
+});
+document.addEventListener("change", e => { if (e.target.id === "callsel"){ corner = e.target.value; renderCorner(); } });
+$("#askf").addEventListener("submit", e => { e.preventDefault(); const v = $("#qbox").value; $("#qbox").value = ""; askIn(v); });
+window.__search = search;
+}
+}
+</script>
+</body>
+</html>
