@@ -198,6 +198,10 @@ details.more{margin-top:10px;font-size:13.5px;color:var(--muted)}
 .trow .au{font-size:12.5px;color:var(--muted);display:block}
 .trow .ai{font-size:12.5px;color:var(--blue);white-space:nowrap}
 
+/* room for the fixed composer + tab bar on the search view; hide the tab bar while typing on a phone */
+body.on-search .app{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+body.typing .tabbar{display:none}
+body.typing .composer{bottom:0;padding-bottom:max(10px,env(safe-area-inset-bottom,0px))}
 /* tab bar */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px max(12px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .tabbar nav{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
@@ -550,9 +554,10 @@ function go(tab){
   for (const k in views) views[k].hidden = k !== tab;
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.tab === tab));
   $("#composer").hidden = tab !== "search";
+  document.body.classList.toggle("on-search", tab === "search");
   $("#ttl").textContent = TITLES[tab];
   window.scrollTo({top: tab === "search" && $("#log").children.length ? document.body.scrollHeight : 0});
-  if (tab === "search") setTimeout(() => $("#qbox").focus({preventScroll:true}), 50);
+  if (tab === "search" && !matchMedia("(pointer: coarse)").matches) setTimeout(() => $("#qbox").focus({preventScroll:true}), 50);
 }
 function askIn(q, opts){ go("search"); $("#empty").hidden = true; ask(q, opts); }
 function summarize(a){
@@ -633,7 +638,10 @@ document.addEventListener("click", e => {
   else if (d.corner){ corner = d.corner; renderCorner(); }
 });
 document.addEventListener("change", e => { if (e.target.id === "callsel"){ corner = e.target.value; renderCorner(); } });
-$("#askf").addEventListener("submit", e => { e.preventDefault(); const v = $("#qbox").value; $("#qbox").value = ""; askIn(v); });
+const coarse = matchMedia("(pointer: coarse)").matches;
+$("#qbox").addEventListener("focus", () => { if (coarse) document.body.classList.add("typing"); });
+$("#qbox").addEventListener("blur", () => document.body.classList.remove("typing"));
+$("#askf").addEventListener("submit", e => { e.preventDefault(); const v = $("#qbox").value; $("#qbox").value = ""; if (coarse) $("#qbox").blur(); askIn(v); });
 window.__search = search;
 }
 }
