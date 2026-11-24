@@ -6,3 +6,14 @@
 - AI 요약은 Claude 안에서 열었을 때 동작하며, 이 GitHub Pages 주소에서는 검색 결과와 출처만 표시됩니다.
 - 원문 출처: 국회사무처 《국회보》
 - 제안용 시연본이며 국회사무처의 공식 서비스가 아닙니다.
+
+## AI 요약 켜기 (Vercel)
+
+`api/summarize.js`는 Vercel에서 돌아가는 요약 중계 함수입니다. API 키는 Vercel 환경변수에만 두고, 페이지 코드에는 넣지 않습니다.
+
+| 환경변수 | 값 | 필수 |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Claude Console에서 만든 API 키 | 예 |
+| `CLAUDE_MODEL` | 사용할 모델 (기본값 `claude-sonnet-5-5`) | 아니요 |
+| `ALLOWED_ORIGIN` | 요약을 허용할 주소 (기본값 모두 허용) | 아니요 |
+| `RATE_PER_MIN` | IP당 1분 요청 한도 (기본값 10) | 아니요 |

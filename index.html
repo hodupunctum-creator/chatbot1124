@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>국회보 아카이브</title>
+<meta name="summary-api" content="api/summarize">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nunito:wght@300;600;700&display=swap">
@@ -440,6 +441,8 @@ const locText = (art, pages) => `제${art.no}호 · ${art.label} · ${art.corner
 /* ---------- Claude ---------- */
 const samplePromise = (window.claude && window.claude.use) ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
 let sampleOff = false, ctl = null, busy = false;
+const API = (document.querySelector('meta[name="summary-api"]') || {}).content || "api/summarize";
+let apiOff = false;
 
 function buildPrompt(q, refs, whole, wide){
   const blocks = refs.map((r, i) => {
@@ -501,13 +504,25 @@ async function ask(q, opts = {}){
   const ans = box.querySelector(".answer"), st = box.querySelector(".status");
   box.querySelector(".stop").onclick = () => ctl && ctl.abort();
   const sample = sampleOff ? null : await samplePromise;
-  if (!sample){ st.innerHTML = "<span>이 화면에서는 AI 요약을 쓸 수 없어 검색 결과만 보여 드려요.</span>"; done(); return; }
+  const noAI = () => { st.innerHTML = "<span>이 주소에서는 AI 요약을 쓸 수 없어 검색 결과만 보여 드려요.</span>"; done(); };
+  if (!sample && apiOff){ noAI(); return; }
   ctl = new AbortController();
   try {
-    const {text} = await sample(buildPrompt(q, top, !!opts.forced, found.overview || found.series), {
-      modelTier:"default", signal:ctl.signal, cache:false,
-      onText: ({text}) => { if (/^\s*NOT_FOUND/.test(text)) return; ans.innerHTML = md(text); }
-    });
+    let text = "";
+    if (sample){
+      ({text} = await sample(buildPrompt(q, top, !!opts.forced, found.overview || found.series), {
+        modelTier:"default", signal:ctl.signal, cache:false,
+        onText: ({text}) => { if (/^\s*NOT_FOUND/.test(text)) return; ans.innerHTML = md(text); }
+      }));
+    } else {
+      const r = await fetch(API, {method:"POST", headers:{"content-type":"application/json"}, signal:ctl.signal,
+        body: JSON.stringify({q, whole:!!opts.forced, wide:!!(found.overview || found.series),
+          items: top.map(x => ({id:x.art.id, pages:(opts.forced ? x.pages.slice(0, 6) : x.pages.slice(0, 3)).map(p => p.p)}))})});
+      if ([404, 405, 501, 503].includes(r.status)){ apiOff = true; noAI(); return; }
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw {code: r.status === 429 ? "rate_limited" : "api_error"};
+      text = String(j.text || "");
+    }
     if (/NOT_FOUND/.test(text) || !/\[\d{1,2}\]/.test(text)){
       box.innerHTML = `<div class="nf">📭 ${NOT_FOUND_MSG}<small>단어가 나온 쪽은 있지만 질문에 답할 만한 내용은 없었습니다.</small></div><details class="more"><summary>단어가 나온 쪽 보기</summary>${srcHTML(null)}</details>`;
       done(); return;
@@ -516,7 +531,7 @@ async function ask(q, opts = {}){
     st.remove(); ans.innerHTML = md(text);
     box.querySelector(".srcs").outerHTML = srcHTML(cited);
   } catch (e){
-    const code = e && e.code;
+    const code = e && (e.name === "AbortError" ? "cancelled" : e.code);
     if (e && e.text) ans.innerHTML = md(e.text);
     const msg = code === "cancelled" ? "요약을 멈췄어요. 아래는 검색 결과예요."
       : ["not_granted","sampling_disabled","capability_disabled","not_declared","capability_removed"].includes(code) ? (sampleOff = true, "AI 요약이 허용되지 않아 검색 결과만 보여 드려요.")
